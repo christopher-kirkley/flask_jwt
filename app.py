@@ -3,8 +3,26 @@ import jwt
 import datetime
 from functools import wraps
 
+from flask_sqlalchemy import SQLAlchemy
+
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = 'blahblah'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
+
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+    admin = db.Column(db.Boolean)
+
+class Todo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String(50))
+    complete = db.Column(db.Boolean)
+    useer_id = db.Column(db.Integer)
 
 def token_required(f):
     @wraps(f)
@@ -35,7 +53,7 @@ def login():
     if auth and auth.password == 'secret':
         token = jwt.encode({
             'user': auth.username,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=10),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=30),
             },
             app.config['SECRET_KEY']
             )
