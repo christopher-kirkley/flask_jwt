@@ -1,5 +1,6 @@
 import requests
 import json
+from base64 import b64encode
 
 def test_return_status_code():
     response = requests.get("http://localhost:5000/user")
@@ -28,8 +29,17 @@ def test_can_delete_user():
     response = requests.delete(f"http://localhost:5000/user/{public_id}")
     assert response.status_code == 200
 
-def test_can_promote_one_user():
-    public_id = 'f87f29c8-9843-4e34-9c68-1bd6449c7c5e'
-    response = requests.put(f"http://localhost:5000/user/{public_id}")
-    assert response.status_code == 200
-    assert json.loads(response.content) == {'message': 'User promoted'}
+# def test_can_promote_one_user():
+#     public_id = 'f87f29c8-9843-4e34-9c68-1bd6449c7c5e'
+#     response = requests.put(f"http://localhost:5000/user/{public_id}")
+#     assert response.status_code == 200
+#     assert json.loads(response.content) == {'message': 'User promoted'}
+
+def test_can_login():
+    username = 'stevie b'
+    password = 'pineapple'
+    credentials = b64encode(b"stevie b:pineapple").decode()
+    res = requests.get("http://localhost:5000/login", headers={"Authorization": f"Basic {credentials}"})
+    assert res.status_code == 200
+    assert 'token' in str(res.content)
+

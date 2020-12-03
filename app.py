@@ -27,6 +27,27 @@ class Todo(db.Model):
     complete = db.Column(db.Boolean)
     user_id = db.Column(db.Integer)
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        if not token:
+            return jsonify({'message': 'token is missing!'}), 401
+
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+            current_user = User.query.filter_by(public_id=data['public_id']).first()
+        except:
+            return jsonify({'message': 'token is invalid!'}), 401
+
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
 @app.route('/user', methods=['GET'])
 def get_all_users():
 
@@ -111,8 +132,8 @@ def login():
     if not user:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login!"'})
 
-    if check_password_has(user.password, auth.password):
-        token = jwt.encode({'public_id': user.public_id, 'exp': datetime.datetime.utcnow() + datetime.datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
+    if check_password_hash(user.password, auth.password):
+        token = jwt.encode({'public_id': user.public_id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
         return jsonify({'token': token.decode('UTF-8')})
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login!"'})
