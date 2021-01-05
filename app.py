@@ -49,7 +49,8 @@ def token_required(f):
     return decorated
 
 @app.route('/user', methods=['GET'])
-def get_all_users():
+@token_required
+def get_all_users(current_user):
 
     users = User.query.all()
 
@@ -66,7 +67,8 @@ def get_all_users():
     return jsonify({'users': output})
 
 @app.route('/user/<public_id>', methods=['GET'])
-def get_one_user(public_id):
+@token_required
+def get_one_user(current_user, public_id):
 
     user = User.query.filter_by(public_id=public_id).first()
 
@@ -79,7 +81,7 @@ def get_one_user(public_id):
     user_data['password'] = user.password
     user_data['admin'] = user.admin
 
-    return jsoniify({'user': user_data})
+    return jsonify({'user': user_data})
     
 
 @app.route('/user', methods=['POST'])
@@ -138,6 +140,35 @@ def login():
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login!"'})
 
+@app.route('/todo/<todo_id>', methods=['GET'])
+@token_required
+def get_one_todo(current_user, todo_id):
+    return ''
+
+@app.route('/todo/<todo_id>', methods=['POST'])
+@token_required
+def create_todo(current_user, todo_id):
+    data = request.get_json()
+
+    new_todo = Todo(text=data['text'], complete=False, user_id=current_user.id)
+    db.session.add(new_todo)
+    db.session.commit()
+    return jsonify({'message': 'Todo created'})
+
+@app.route('/todo/<todo_id>', methods=['PUT'])
+@token_required
+def complete_todo(current_user, todo_id):
+    return ''
+
+@app.route('/todo', methods=['GET'])
+@token_required
+def get_all_todos(current_user, todo_id):
+    return ''
+
+@app.route('/todo/<todo_id>', methods=['DELETE'])
+@token_required
+def delete_todo(current_user, todo_id):
+    return ''
 
 if __name__ == '__main__':
     app.run(debug=True)
