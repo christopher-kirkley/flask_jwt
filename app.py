@@ -6,8 +6,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 app.config['SECRET_KEY'] = 'blahblah'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
@@ -67,7 +69,7 @@ def get_all_users(current_user):
     return jsonify({'users': output})
 
 @app.route('/user/<public_id>', methods=['GET'])
-@token_required
+# @token_required
 def get_one_user(current_user, public_id):
 
     user = User.query.filter_by(public_id=public_id).first()
@@ -122,7 +124,7 @@ def delete_user(public_id):
 
     return jsonify({'message': 'User deleted'})
 
-@app.route('/login')
+@app.route('/login', methods=['POST'])
 def login():
     auth = request.authorization
 
