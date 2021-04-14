@@ -6,10 +6,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 app.config['SECRET_KEY'] = 'blahblah'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
@@ -34,8 +34,8 @@ def token_required(f):
     def decorated(*args, **kwargs):
         token = None
         
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
+        if 'x-access-token' in request.cookies:
+            token = request.cookies['x-access-token']
 
         if not token:
             return jsonify({'message': 'token is missing!'}), 401
@@ -54,6 +54,7 @@ def token_required(f):
 @token_required
 def get_all_users(current_user):
 
+
     users = User.query.all()
 
     output = []
@@ -65,8 +66,9 @@ def get_all_users(current_user):
         user_data['password'] = user.password
         user_data['admin'] = user.admin
         output.append(user_data)
-
+    
     return jsonify({'users': output})
+
 
 @app.route('/user/<public_id>', methods=['GET'])
 # @token_required
@@ -125,6 +127,7 @@ def delete_user(public_id):
     return jsonify({'message': 'User deleted'})
 
 @app.route('/login', methods=['POST'])
+
 def login():
     auth = request.authorization
 
@@ -138,7 +141,13 @@ def login():
 
     if check_password_hash(user.password, auth.password):
         token = jwt.encode({'public_id': user.public_id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)}, app.config['SECRET_KEY'])
-        return jsonify({'token': token.decode('UTF-8')})
+
+        response = make_response("cookie fun")
+        response.set_cookie("x-access-token", token.decode('UTF-8'), httponly=True, samesite="Lax", max_age=10)
+        return response
+
+
+        # return jsonify({'token': token.decode('UTF-8')})
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login!"'})
 
