@@ -23,6 +23,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
 app.config["JWT_SECRET_KEY"] = "thisisthetimeofyourlife"  # Change this
 app.config['JWT_COOKIE_SECURE'] = False
 app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(minutes=1)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 
 jwt = JWTManager(app)
@@ -85,7 +86,7 @@ def get_all_users():
 @app.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
-    return jsonify({'msg': 'success'})
+    return jsonify({'msg': 'You are logged in!'})
 
 # @app.route('/user/<public_id>', methods=['GET'])
 # # @token_required
