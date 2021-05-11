@@ -21,6 +21,8 @@ CORS(app, supports_credentials=True)
 app.config['SECRET_KEY'] = 'blahblah'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
 app.config["JWT_SECRET_KEY"] = "thisisthetimeofyourlife"  # Change this!
+app.config["JWT_COOKIE_SECURE"] = False
+
 
 jwt = JWTManager(app)
 
@@ -60,31 +62,10 @@ def login():
 
     return make_response('Could not verify', 401)
 
-# def token_required(f):
-#     @wraps(f)
-#     def decorated(*args, **kwargs):
-#         token = None
-        
-#         if 'x-access-token' in request.cookies:
-#             token = request.cookies['x-access-token']
-
-#         if not token:
-#             return jsonify({'message': 'token is missing!'}), 401
-
-#         try:
-#             data = jwt.decode(token, app.config['SECRET_KEY'])
-#             current_user = User.query.filter_by(public_id=data['public_id']).first()
-#         except:
-#             return jsonify({'message': 'token is invalid!'}), 401
-
-#         return f(current_user, *args, **kwargs)
-    
-#     return decorated
 
 @app.route('/user', methods=['GET'])
 @jwt_required()
-def get_all_users(current_user):
-
+def get_all_users():
 
     users = User.query.all()
 
@@ -100,6 +81,10 @@ def get_all_users(current_user):
     
     return jsonify({'users': output})
 
+@app.route('/dashboard', methods=['GET'])
+@jwt_required()
+def dashboard():
+    return jsonify({'msg': 'success'})
 
 # @app.route('/user/<public_id>', methods=['GET'])
 # # @token_required
