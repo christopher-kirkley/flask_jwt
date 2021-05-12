@@ -60,6 +60,7 @@ def login():
         response = jsonify({"msg": "login successful"})
         access_token = create_access_token(identity=auth.username)
         set_access_cookies(response, access_token)
+        response.set_cookie("session", "true", samesite="Lax", max_age=60)
         return response
 
     return make_response('Could not verify', 401)
