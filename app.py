@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request, make_response, jsonify
 import jwt
-import datetime
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -9,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
 
 from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
@@ -23,7 +26,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///temp.db'
 app.config["JWT_SECRET_KEY"] = "thisisthetimeofyourlife"  # Change this
 app.config['JWT_COOKIE_SECURE'] = False
 app.config["JWT_COOKIE_SAMESITE"] = "Lax"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(minutes=1)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=1)
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 
 jwt = JWTManager(app)
@@ -43,6 +46,29 @@ class Todo(db.Model):
     text = db.Column(db.String(50))
     complete = db.Column(db.Boolean)
     user_id = db.Column(db.Integer)
+
+@app.after_request
+def refresh_expiring_jwts(response):
+    try:
+        exp_timestamp = get_jwt()["exp"]
+        print(exp_timestamp)
+        now = datetime.now(timezone.utc)
+        target_timestamp = datetime.timestamp(now + timedelta(minutes=1))
+        if target_timestamp > exp_timestamp:
+            access_token = create_access_token(identity=get_jwt_identity())
+            set_access_cookies(response, access_token)
+            response.set_cookie("session", "true", samesite="Lax", max_age=60)
+        return response
+    except (RuntimeError, KeyError):
+        # Case where there is not a valid JWT. Just return the original respone
+        return response
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    response = make_response('He', 'eo')
+    response.set_cookie("session", "false", samesite="Lax", max_age=0)
+    return response
+
 
 @app.route('/login', methods=['POST'])
 def login():
